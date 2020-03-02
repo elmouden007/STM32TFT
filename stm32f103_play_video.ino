@@ -2,7 +2,8 @@
 #include "Adafruit_GFX.h"
 #include "Adafruit_ILI9341_STM32.h"
 #include "SdFat.h"
-
+ 
+#define TFT_CS1   PB0
 #define TFT_CS   PA4
 #define TFT_RST  PA2
 #define TFT_MOSI PA7
@@ -11,7 +12,7 @@
 #define TFT_DC   PA3
 
 #define NLINES 30
-uint16_t buf[200*NLINES]; 
+uint16_t buf[240*NLINES]; 
 
 #define USE_SDIO 0
 const uint8_t SD_CS = PA0;
@@ -20,26 +21,25 @@ SdFat sd;SdFile file;int videoNo=0;
 Adafruit_ILI9341_STM32 tft = Adafruit_ILI9341_STM32(TFT_CS,TFT_DC, TFT_RST);
 
 
-// use 18 if your SD card doesn't work
 
+
+#define TFTFREQ 36000000
 #define SD_SPEED 36
-void sdSPI() { SPI.beginTransaction(SD_SCK_MHZ(SD_SPEED)); }
-void tftSPI() { SPI.beginTransaction(SPISettings(36000000, MSBFIRST, SPI_MODE3, DATA_SIZE_16BIT)); }
 
-// the callback function below renders decoded JPEG on the tft
-bool rendertft(int16_t x, int16_t y, uint16_t w, uint16_t h, uint16_t* bitmap)
-{
-  tftSPI();
-  if(y>=tft.height()) return 0; // 0 - to stop decoding
-  tft.drawImage(x,y, w,h, bitmap);
-  return 1; // 1 - to decode next block
-}
+void sdSPI() { SPI.beginTransaction(SD_SCK_MHZ(SD_SPEED)); }
+void tftSPI() { SPI.beginTransaction(SPISettings(TFTFREQ, MSBFIRST, SPI_MODE3, DATA_SIZE_16BIT)); }
+
+
+
+
+ 
+
 
 void setup() {
   Serial.begin(9600);
   Serial.println("ILI9341 Test!"); 
   tft.begin();
-   
+
 
    
 if(!sd.cardBegin(SD_CS, SD_SCK_MHZ(SD_SPEED))) {
@@ -55,16 +55,18 @@ if(!sd.cardBegin(SD_CS, SD_SCK_MHZ(SD_SPEED))) {
   tftSPI();
   tft.setRotation(3);
   tft.fillScreen(BLACK);
+       
 }
 
 void loop() {
+PlayVideo("diy.raw",0,0, 320,240,10,1);  // ok
+//PlayVideo("3008.raw",0,0, 320,240,10,1);  // ok
+PlayVideo("maroc.raw",0,0, 320,240,10,1);  // ok
 
-showVideo("3008.raw",0,0, 320,240,10,1);  // ok
 }
-
-int statMode=0;
-
-void showVideo(char *name, int x, int y, int wd, int ht, int nl, int skipFr)
+ 
+ 
+void PlayVideo(char *name, int x, int y, int wd , int ht, int nl, int skipFr)
 
 {
   if(!file.open(name, O_CREAT | O_RDONLY)) {
@@ -77,11 +79,11 @@ void showVideo(char *name, int x, int y, int wd, int ht, int nl, int skipFr)
      for(int i=0;i<ht/nl;i++) {
        int rd = file.read(buf,wd*2*nl);
       tftSPI();
-       for(int j=0;j<nl;j++) tft.drawImage(0,i*nl+j+(statMode>0?0:0),tft.width(),1,buf+0
+       for(int j=0;j<nl;j++) tft.drawImage(0,i*nl+j+0,tft.width(),1,buf+0
       +j*wd);
  
     }
-
+ if(skipFr>0) file.seekCur(wd*ht*2*skipFr);
   }
   file.close();
 }
