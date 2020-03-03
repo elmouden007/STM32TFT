@@ -16,7 +16,7 @@ uint16_t buf[240*NLINES];
 
 #define USE_SDIO 0
 const uint8_t SD_CS = PA0;
-SdFat sd;SdFile file;int videoNo=0;
+SdFat sd;SdFile file;
 
 Adafruit_ILI9341_STM32 tft = Adafruit_ILI9341_STM32(TFT_CS,TFT_DC, TFT_RST);
 
